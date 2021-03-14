@@ -23,7 +23,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "CtwTest\\Middleware\\PhpConfigMiddleware\\": "src"
+            "CtwTest\\Middleware\\PhpConfigMiddleware\\": "test"
         }
     },
     "scripts": {

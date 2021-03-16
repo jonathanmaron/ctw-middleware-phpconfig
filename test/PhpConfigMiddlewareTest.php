@@ -8,7 +8,6 @@ use Ctw\Middleware\PhpConfigMiddleware\PhpConfigMiddleware;
 use Ctw\Middleware\PhpConfigMiddleware\PhpConfigMiddlewareFactory;
 use Laminas\ServiceManager\ServiceManager;
 use Middlewares\Utils\Dispatcher;
-use  Psr\Http\Message\ResponseInterface;
 
 class PhpConfigMiddlewareTest extends AbstractCase
 {
@@ -20,7 +19,9 @@ class PhpConfigMiddlewareTest extends AbstractCase
 
         Dispatcher::run($stack);
 
-        $this->assertEquals('On', ini_get('opcache.validate_timestamps'));
+        $this->assertEquals('On', ini_get('assert.warning'));
+        $this->assertEquals('1', ini_get('assert.active'));
+        $this->assertEquals('', ini_get('assert.callback'));
     }
 
     public function testPhpConfigMiddlewareException(): void
@@ -41,7 +42,9 @@ class PhpConfigMiddlewareTest extends AbstractCase
     {
         $config    = [
             PhpConfigMiddleware::class => [
-                'opcache.validate_timestamps' => true,
+                'assert.warning'  => true,
+                'assert.active'   => 1,
+                'assert.callback' => null,
             ],
         ];
         $container = new ServiceManager();

@@ -5,20 +5,20 @@ namespace CtwTest\Middleware\PhpConfigMiddleware;
 
 use Ctw\Middleware\PhpConfigMiddleware\Exception\UnexpectedValueException;
 use Ctw\Middleware\PhpConfigMiddleware\PhpConfigMiddleware;
+use Ctw\Middleware\PhpConfigMiddleware\PhpConfigMiddlewareFactory;
+use Laminas\ServiceManager\ServiceManager;
 use Middlewares\Utils\Dispatcher;
+use  Psr\Http\Message\ResponseInterface;
 
 class PhpConfigMiddlewareTest extends AbstractCase
 {
     public function testPhpConfigMiddleware(): void
     {
-        $config = [
-            'opcache.validate_timestamps' => true,
+        $stack = [
+            $this->getInstance(),
         ];
 
-        $middleware = new PhpConfigMiddleware();
-        $middleware->setConfig($config);
-
-        Dispatcher::run([$middleware]);
+        Dispatcher::run($stack);
 
         $this->assertEquals('On', ini_get('opcache.validate_timestamps'));
     }
@@ -35,5 +35,20 @@ class PhpConfigMiddlewareTest extends AbstractCase
         $middleware->setConfig($config);
 
         Dispatcher::run([$middleware]);
+    }
+
+    private function getInstance(): PhpConfigMiddleware
+    {
+        $config    = [
+            PhpConfigMiddleware::class => [
+                'opcache.validate_timestamps' => true,
+            ],
+        ];
+        $container = new ServiceManager();
+        $container->setService('config', $config);
+
+        $factory = new PhpConfigMiddlewareFactory();
+
+        return $factory->__invoke($container);
     }
 }

@@ -14,19 +14,19 @@ class PhpConfigMiddlewareTest extends AbstractCase
     public function testPhpConfigMiddleware(): void
     {
         $stack = [
-            $this->getInstance(),
+            self::getInstance(),
         ];
 
         Dispatcher::run($stack);
 
-        $this->assertEquals('On', ini_get('assert.warning'));
-        $this->assertEquals('1', ini_get('assert.active'));
-        $this->assertEquals('', ini_get('assert.callback'));
+        self::assertEquals('On', ini_get('assert.warning'));
+        self::assertEquals('1', ini_get('assert.active'));
+        self::assertEquals('', ini_get('assert.callback'));
     }
 
     public function testPhpConfigMiddlewareException(): void
     {
-        $this->expectException(UnexpectedValueException::class);
+        self::expectException(UnexpectedValueException::class);
 
         $config = [
             'invalid.invalid' => 'invalid',

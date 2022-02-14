@@ -40,6 +40,6 @@ abstract class AbstractPhpConfigMiddleware extends AbstractMiddleware
             return '';
         }
 
-        return (string) $value;
+        return $value;
     }
 }

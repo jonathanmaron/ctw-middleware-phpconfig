@@ -12,6 +12,7 @@ class PhpConfigMiddlewareFactory
         $config = [];
         if ($container->has('config')) {
             $config = $container->get('config');
+            assert(is_array($config));
             $config = $config[PhpConfigMiddleware::class];
         }
 

@@ -3,10 +3,16 @@ declare(strict_types=1);
 
 namespace Ctw\Middleware\PhpConfigMiddleware;
 
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
 class PhpConfigMiddlewareFactory
 {
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function __invoke(ContainerInterface $container): PhpConfigMiddleware
     {
         $config = [];

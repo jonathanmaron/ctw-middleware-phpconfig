@@ -15,7 +15,7 @@
         </report>
     </coverage>
     <testsuites>
-        <testsuite name="CtwTest\Middleware\PhpConfigMiddleware">
+        <testsuite name="ctw/ctw-middleware-php-config">
             <directory>test</directory>
         </testsuite>
     </testsuites>

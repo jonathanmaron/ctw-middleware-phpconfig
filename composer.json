@@ -1,5 +1,5 @@
 {
-    "name": "ctw/ctw-middleware-php-config",
+    "name": "ctw/ctw-middleware-phpconfig",
     "description": "This PSR-15 middleware allows php.ini settings to be set at runtime with values from a config file.",
     "license": "BSD-3-Clause",
     "type": "library",

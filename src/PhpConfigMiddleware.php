@@ -14,13 +14,12 @@ class PhpConfigMiddleware extends AbstractPhpConfigMiddleware
     {
         $config = $this->getConfig();
 
-        if (count($config) > 0) {
-            foreach ($config as $option => $value) {
-                if (false === ini_set($option, $value = $this->normalize($value))) {
-                    $format  = 'Cannot set the value of a php.ini configuration option ("%s" => "%s").';
-                    $message = sprintf($format, $option, $value);
-                    throw new UnexpectedValueException($message);
-                }
+        foreach ($config as $option => $value) {
+            $value = $this->normalize($value);
+            if (false === ini_set($option, $value)) {
+                $format  = 'Cannot set the value of a php.ini configuration option ("%s" => "%s").';
+                $message = sprintf($format, $option, $value);
+                throw new UnexpectedValueException($message);
             }
         }
 

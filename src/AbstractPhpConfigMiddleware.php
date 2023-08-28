@@ -22,9 +22,7 @@ abstract class AbstractPhpConfigMiddleware extends AbstractMiddleware
     }
 
     /**
-     * @param bool|int|string|null $value
-     *
-     * @return string
+     * @param null|bool|int|string $value
      */
     protected function normalize($value): string
     {
@@ -36,7 +34,7 @@ abstract class AbstractPhpConfigMiddleware extends AbstractMiddleware
             return (string) $value;
         }
 
-        if (is_null($value)) {
+        if (null === $value) {
             return '';
         }
 

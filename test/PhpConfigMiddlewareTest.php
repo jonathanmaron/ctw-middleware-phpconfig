@@ -13,9 +13,7 @@ class PhpConfigMiddlewareTest extends AbstractCase
 {
     public function testPhpConfigMiddleware(): void
     {
-        $stack = [
-            self::getInstance(),
-        ];
+        $stack = [self::getInstance()];
 
         Dispatcher::run($stack);
 

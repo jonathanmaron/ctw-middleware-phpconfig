@@ -15,6 +15,7 @@ class PhpConfigMiddleware extends AbstractPhpConfigMiddleware
         $config = $this->getConfig();
 
         foreach ($config as $option => $value) {
+            assert(is_bool($value) || is_int($value) || is_string($value) || null === $value);
             $value = $this->normalize($value);
             if (false === ini_set($option, $value)) {
                 $format  = 'Cannot set the value of a php.ini configuration option ("%s" => "%s").';

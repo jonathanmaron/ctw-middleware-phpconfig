@@ -11,14 +11,15 @@ class PhpConfigMiddlewareFactory
     {
         $config = [];
         if ($container->has('config')) {
-            $config = $container->get('config');
+            $containerConfig = $container->get('config');
+            assert(is_array($containerConfig));
+            $config = $containerConfig[PhpConfigMiddleware::class];
             assert(is_array($config));
-            $config = $config[PhpConfigMiddleware::class];
         }
 
         $middleware = new PhpConfigMiddleware();
 
-        if ((is_countable($config) ? count($config) : 0) > 0) {
+        if ([] !== $config) {
             $middleware->setConfig($config);
         }
 

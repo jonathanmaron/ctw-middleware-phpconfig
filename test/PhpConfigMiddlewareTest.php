@@ -312,7 +312,6 @@ final class PhpConfigMiddlewareTest extends AbstractCase
         self::assertInstanceOf(PhpConfigMiddleware::class, $middleware);
     }
 
-
     public function testIntegerZeroIsNormalizedToString(): void
     {
         $config = [

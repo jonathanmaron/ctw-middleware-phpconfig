@@ -1,138 +1,56 @@
-# PHP 8.5.7 Upgrade — `ctw/ctw-middleware-phpconfig`
+# PHP 8.5 Migration — `ctw/ctw-middleware-phpconfig`
 
 - **Branch:** `php85` (cut from `master`)
 - **Runtime:** PHP 8.3.31 → **8.5.7**
-- **Date:** 2026-06-25
+- **PHPUnit:** 12 → **13.2.1**
+- **Status:** ✅ done
 
-This is a **TODO list** of the changes required for this package to run cleanly
-under PHP 8.5.7. Boxes are intentionally left unchecked.
-
----
-
-## ✅ Applied on `php85` — fully green
-
-> Supersedes the "❌ FAILS" analysis in §1.
-
-- [x] `composer.json`: `ctw/ctw-middleware` `^4.0` → **`dev-php85`** — `composer
-  update -W` is green; the five `middlewares/utils` deprecations (§2a) are
-  **cleared** by middlewares-utils v4.
-- [x] **§2b done:** replaced the deprecated `assert.warning` / `assert.active` /
-  `assert.callback` example INI directives in `test/PhpConfigMiddlewareTest.php`
-  with non-deprecated string-typed directives (`error_prepend_string`,
-  `default_mimetype`, `user_agent`) that round-trip `normalize()`'s output the
-  same way. The 2 PHP `assert.*` deprecations are gone.
-- [x] **PHPUnit 13:** `phpunit/phpunit` → `^13.0`, `ctw/ctw-qa` → `dev-php85`,
-  phpunit.xml schema → 13.2.
-- [x] **§3 done:** the shared PHPStan `missingType.*` unmatched-ignore is fixed
-  centrally in `ctw/ctw-qa` (`reportUnmatchedIgnoredErrors: false`) and consumed
-  via `ctw/ctw-qa: dev-php85`.
-
-**Result:** `phpunit --no-coverage` → **28 tests, 34 assertions, 0 issues** under
-PHPUnit 13.2.1 / PHP 8.5.7. Re-tag the `ctw/*` deps to stable before merge.
-
-> ⚠️ **This package has a first-party PHP 8.5 finding** (the `assert.*` INI
-> deprecation in §2b), in addition to the shared third-party ones.
-
-Detection commands used:
-
-```bash
-composer update -W
-php vendor/bin/phpunit --no-coverage --display-deprecations --display-warnings --display-notices --display-errors
-composer rector      # rector --dry-run
-composer phpstan
-```
+PSR-15 middleware that applies `php.ini` directives at runtime from a config
+array. Under PHP 8.5 the original `composer update -W` failed because
+`laminas/laminas-diactoros` 2.x (pulled in transitively via
+`ctw/ctw-middleware ^4.0`) caps PHP at `~8.3.0`. The fix path is
+`ctw/ctw-middleware: dev-php85` (diactoros → ^3, middlewares/utils → ^4, which
+clears five vendor "implicitly nullable parameter" deprecations). This package
+also carries one **first-party** PHP 8.5 finding: the test suite exercised the
+middleware with the `assert.*` INI directives, which PHP 8.5 deprecates as INI
+settings.
 
 ---
 
-## 1. `composer update -W` — ❌ FAILS (inherited blocker)
+## Audit checklist
 
-```
-Problem 1
-  - Root composer.json requires ctw/ctw-middleware ^4.0
-  - ctw/ctw-middleware[4.0.0 ... 4.0.6] require laminas/laminas-diactoros ^2.11
-  - laminas/laminas-diactoros[2.11 ... 2.26] require php ~8.0 || ~8.1 || ~8.2 || ~8.3
-    -> your php version (8.5.7) does not satisfy that requirement.
-```
+### `test/PhpConfigMiddlewareTest.php` — first-party
 
-No direct `laminas-diactoros` dependency; blocked transitively through
-`ctw/ctw-middleware ^4.0` (its 4.0.x releases pin Diactoros 2.x, PHP ≤ 8.3).
+- [x] **(deprecation) `test/PhpConfigMiddlewareTest.php`** — `ini_set(): assert.warning INI setting is deprecated` / `assert.active` / `assert.callback`. The suite fed the middleware the `assert.*` directives as example config; PHP 8.5 deprecates the runtime-configurable `assert.*` INI settings (`assert.active`, `assert.warning`, `assert.bail`, `assert.callback`, `assert.exception`), so `ini_set()` emitted a deprecation through `PhpConfigMiddleware::process()`.
+  **Fix:** replaced the `assert.*` directives with non-deprecated, string-typed INI directives — `error_prepend_string`, `default_mimetype`, `user_agent` — that round-trip the middleware's `normalize()` output identically (bool → `'On'`/`'Off'`, int → string, null → `''`). `default_charset` was tried first but it validates its value as an encoding (emitted a warning), so an inert string directive was used instead. The `testBooleanFalseIsNormalizedToOff` assertion tightened from a `'' || 'Off'` either-or check to an exact `self::assertSame('Off', …)` now that the directive round-trips deterministically.
 
-- [ ] **Blocked on `ctw/ctw-middleware`.** Fix & publish the Diactoros 3 bump
-  there first (`ctw-middleware/dev-php85/UPDATE.md` §1), then bump this package's
-  `ctw/ctw-middleware` constraint and re-run `composer update -W`.
+### Vendor (cleared by `ctw/ctw-middleware: dev-php85`)
 
-> §2 was captured against the existing (master) lockfile because the update
-> aborts.
+- [x] **(deprecation) `vendor/middlewares/utils`** — five "implicitly nullable parameter" deprecations (`Dispatcher::run()` `$request`; `Factory::createUploadedFile()` `$size`/`$filename`/`$mediaType`; `CallableHandler::__construct()` `$responseFactory`).
+  **Fix:** not fixable in this repo's `src/`. Cleared by `middlewares/utils` v4 (declares explicit `?type` parameters), pulled in via `ctw/ctw-middleware: dev-php85`.
+
+### Tooling
+
+- [x] **(tooling) PHPUnit 12 → 13.** Suite runs green on PHPUnit 13.2.1; no first-party test-double changes were required for this package.
+  **Fix:** `phpunit/phpunit ^12 → ^13`, `ctw/ctw-qa → dev-php85`, `phpunit.xml.dist` schema bumped to 13.2.
+- [x] **(tooling) PHPStan `missingType.*` unmatched-ignore.** Resolved centrally in `ctw/ctw-qa` (`reportUnmatchedIgnoredErrors: false`), consumed via `ctw/ctw-qa: dev-php85`. PHPStan is clean.
 
 ---
 
-## 2a. PHP 8.5 runtime deprecations — third-party (`middlewares/utils`)
+## composer.json & CI
 
-The "implicitly nullable parameter" deprecation. **Not fixable in this repo's
-`src/`.**
-
-| Location | Method / parameter |
-| --- | --- |
-| `vendor/middlewares/utils/src/Dispatcher.php:21` | `Dispatcher::run()` `$request` |
-| `vendor/middlewares/utils/src/Factory.php:88` | `Factory::createUploadedFile()` `$size` |
-| `vendor/middlewares/utils/src/Factory.php:90` | `Factory::createUploadedFile()` `$filename` |
-| `vendor/middlewares/utils/src/Factory.php:91` | `Factory::createUploadedFile()` `$mediaType` |
-| `vendor/middlewares/utils/src/CallableHandler.php:25` | `CallableHandler::__construct()` `$responseFactory` |
-
-- [ ] Resolved by updating `middlewares/utils` once §1 is cleared; escalate
-  upstream if the latest release still emits them.
-
-## 2b. PHP 8.5 runtime deprecations — **first-party (must fix here)**
-
-`PhpConfigMiddleware::process()` applies arbitrary php.ini directives via
-`ini_set($option, $value)` (`src/PhpConfigMiddleware.php:20`). The test suite
-feeds it the `assert.*` directives, which **PHP 8.5 deprecates**:
-
-```
-src/PhpConfigMiddleware.php:20  ini_set(): assert.warning INI setting is deprecated
-  (CtwTest\...\PhpConfigMiddlewareTest::testBooleanFalseIsNormalizedToOff, test:107)
-src/PhpConfigMiddleware.php:20  ini_set(): assert.active  INI setting is deprecated
-  (CtwTest\...\PhpConfigMiddlewareTest::testIntegerZeroIsNormalizedToString, test:315)
-```
-
-In PHP 8.5 the runtime-configurable `assert.*` INI settings (`assert.active`,
-`assert.warning`, `assert.bail`, `assert.callback`, `assert.exception`) are
-deprecated.
-
-- [ ] **`test/PhpConfigMiddlewareTest.php`** — the fixtures at lines 26-28, 66,
-  93, 101, 110, 119, 129, 137 use `assert.warning` / `assert.active` /
-  `assert.callback` as example directives. Replace them with non-deprecated
-  php.ini options (e.g. `precision`, `serialize_precision`, `default_charset`)
-  so the suite exercises the middleware without tripping the PHP 8.5 deprecation.
-- [ ] **`src/PhpConfigMiddleware.php`** (optional, decide in step 2) — consider
-  having the middleware skip or warn on directives PHP has deprecated, so a
-  consumer's config can't surface the deprecation at runtime. The current code
-  is a generic pass-through, so this is a design choice, not strictly required.
+- [x] `require.php`: `^8.3` → **`^8.5`** — pins the runtime floor to the target major.
+- [x] `ctw/ctw-middleware`: `^4.0` → **`dev-php85`** — brings diactoros ^3 (3.8.0) + middlewares/utils ^4 (4.0.2); unblocks `composer update -W`. Re-tag to a stable release before merge.
+- [x] `ctw/ctw-qa`: `^5.0` → **`dev-php85`** (PHP 8.5 / PHPUnit 13 QA config). Re-tag before merge.
+- [x] `phpunit/phpunit`: `^12.0` → **`^13.0`** (installs 13.2.1).
+- [x] `phpunit.xml.dist`: schema → 13.2.
+- [x] `.github/workflows/tests.yml`: matrix → **PHP 8.5 only** (`php: [ '8.5' ]`).
 
 ---
 
-## 3. QA tooling issues
+## Final audit (PHP 8.5.7)
 
-- [ ] **PHPStan unmatched ignore pattern** (`missingType.generics`) — fix
-  centrally in **`ctw/ctw-qa`** (`ctw-qa/dev-php85/UPDATE.md` §3). PHPStan
-  currently reports **1 error**, this spurious one only.
-
----
-
-## 4. Notes (non-blocking)
-
-- Run locally with `--no-coverage` (no Xdebug/PCOV here). Not a PHP 8.5 issue.
-
----
-
-## 5. Verification snapshot (current state on `php85`)
-
-| Check | Result |
-| --- | --- |
-| `composer update -W` | ❌ fails — transitive `laminas-diactoros` 2.x (§1) |
-| PHPUnit (`--no-coverage`, stale deps) | 28 tests, 34 assertions, **7 deprecations** (5× `middlewares/utils` §2a + 2× `assert.*` §2b) |
-| Rector (dry-run) | ✅ no changes proposed |
-| PHPStan | ❌ 1 error (shared unmatched-ignore, §3) |
-
-**First-party work needed here:** §2b. Everything else is gated on upstream
-`ctw/ctw-middleware` + `ctw/ctw-qa` fixes.
+- [x] `php -v` → **PHP 8.5.7** (cli).
+- [x] `composer update -W` → **clean** (rc=0, nothing to modify; no security advisories).
+- [x] `phpunit --no-coverage --display-deprecations --display-warnings --display-notices --display-errors` → **28 tests, 34 assertions, 0 issues** (PHPUnit 13.2.1 / PHP 8.5.7).
+- [x] PHPStan → **clean** (no issues found).

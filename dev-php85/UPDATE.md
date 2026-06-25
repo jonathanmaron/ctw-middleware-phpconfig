@@ -9,21 +9,26 @@ under PHP 8.5.7. Boxes are intentionally left unchecked.
 
 ---
 
-## ✅ Applied on `php85` (diactoros blocker resolved) — ⚠️ one first-party item remains
+## ✅ Applied on `php85` — fully green
 
 > Supersedes the "❌ FAILS" analysis in §1.
 
 - [x] `composer.json`: `ctw/ctw-middleware` `^4.0` → **`dev-php85`** — `composer
-  update -W` is now green; the five `middlewares/utils` deprecations (§2a) are
+  update -W` is green; the five `middlewares/utils` deprecations (§2a) are
   **cleared** by middlewares-utils v4.
-- [ ] **Still open — §2b:** `phpunit --no-coverage` still reports **2
-  deprecations** from the deprecated `assert.*` INI settings exercised by
-  `test/PhpConfigMiddlewareTest.php`. This is a first-party test fix (replace the
-  `assert.*` example directives with non-deprecated ones) and is **independent of
-  the diactoros blocker** — see §2b below.
+- [x] **§2b done:** replaced the deprecated `assert.warning` / `assert.active` /
+  `assert.callback` example INI directives in `test/PhpConfigMiddlewareTest.php`
+  with non-deprecated string-typed directives (`error_prepend_string`,
+  `default_mimetype`, `user_agent`) that round-trip `normalize()`'s output the
+  same way. The 2 PHP `assert.*` deprecations are gone.
+- [x] **PHPUnit 13:** `phpunit/phpunit` → `^13.0`, `ctw/ctw-qa` → `dev-php85`,
+  phpunit.xml schema → 13.2.
+- [x] **§3 done:** the shared PHPStan `missingType.*` unmatched-ignore is fixed
+  centrally in `ctw/ctw-qa` (`reportUnmatchedIgnoredErrors: false`) and consumed
+  via `ctw/ctw-qa: dev-php85`.
 
-Also residual: the shared PHPStan `missingType.*` unmatched-ignore (§3, owned by
-`ctw/ctw-qa`). Re-tag `ctw/ctw-middleware` to stable before merge.
+**Result:** `phpunit --no-coverage` → **28 tests, 34 assertions, 0 issues** under
+PHPUnit 13.2.1 / PHP 8.5.7. Re-tag the `ctw/*` deps to stable before merge.
 
 > ⚠️ **This package has a first-party PHP 8.5 finding** (the `assert.*` INI
 > deprecation in §2b), in addition to the shared third-party ones.

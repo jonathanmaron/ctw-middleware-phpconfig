@@ -5,8 +5,25 @@
 - **Date:** 2026-06-25
 
 This is a **TODO list** of the changes required for this package to run cleanly
-under PHP 8.5.7. Nothing here has been fixed yet — the fixes happen in a second
-step. Boxes are intentionally left unchecked.
+under PHP 8.5.7. Boxes are intentionally left unchecked.
+
+---
+
+## ✅ Applied on `php85` (diactoros blocker resolved) — ⚠️ one first-party item remains
+
+> Supersedes the "❌ FAILS" analysis in §1.
+
+- [x] `composer.json`: `ctw/ctw-middleware` `^4.0` → **`dev-php85`** — `composer
+  update -W` is now green; the five `middlewares/utils` deprecations (§2a) are
+  **cleared** by middlewares-utils v4.
+- [ ] **Still open — §2b:** `phpunit --no-coverage` still reports **2
+  deprecations** from the deprecated `assert.*` INI settings exercised by
+  `test/PhpConfigMiddlewareTest.php`. This is a first-party test fix (replace the
+  `assert.*` example directives with non-deprecated ones) and is **independent of
+  the diactoros blocker** — see §2b below.
+
+Also residual: the shared PHPStan `missingType.*` unmatched-ignore (§3, owned by
+`ctw/ctw-qa`). Re-tag `ctw/ctw-middleware` to stable before merge.
 
 > ⚠️ **This package has a first-party PHP 8.5 finding** (the `assert.*` INI
 > deprecation in §2b), in addition to the shared third-party ones.

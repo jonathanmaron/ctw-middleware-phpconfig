@@ -23,9 +23,9 @@ final class PhpConfigMiddlewareTest extends AbstractCase
 
         Dispatcher::run($stack);
 
-        self::assertSame('On', ini_get('assert.warning'));
-        self::assertSame('1', ini_get('assert.active'));
-        self::assertSame('', ini_get('assert.callback'));
+        self::assertSame('On', ini_get('error_prepend_string'));
+        self::assertSame('1', ini_get('default_mimetype'));
+        self::assertSame('', ini_get('user_agent'));
     }
 
     /**
@@ -63,7 +63,7 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     public function testGetConfigReturnsSetConfig(): void
     {
         $config = [
-            'assert.active' => 1,
+            'default_mimetype' => 1,
         ];
 
         $middleware = new PhpConfigMiddleware();
@@ -90,7 +90,7 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     public function testBooleanTrueIsNormalizedToOn(): void
     {
         $config = [
-            'assert.warning' => true,
+            'error_prepend_string' => true,
         ];
 
         $middleware = new PhpConfigMiddleware();
@@ -98,7 +98,7 @@ final class PhpConfigMiddlewareTest extends AbstractCase
 
         Dispatcher::run([$middleware]);
 
-        self::assertSame('On', ini_get('assert.warning'));
+        self::assertSame('On', ini_get('error_prepend_string'));
     }
 
     /**
@@ -107,7 +107,7 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     public function testBooleanFalseIsNormalizedToOff(): void
     {
         $config = [
-            'assert.warning' => false,
+            'error_prepend_string' => false,
         ];
 
         $middleware = new PhpConfigMiddleware();
@@ -115,9 +115,7 @@ final class PhpConfigMiddlewareTest extends AbstractCase
 
         Dispatcher::run([$middleware]);
 
-        // PHP's ini_set with 'Off' results in 'Off' being stored, but ini_get may return empty string
-        $value = ini_get('assert.warning');
-        self::assertTrue('' === $value || 'Off' === $value);
+        self::assertSame('Off', ini_get('error_prepend_string'));
     }
 
     /**
@@ -126,7 +124,7 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     public function testIntegerIsNormalizedToString(): void
     {
         $config = [
-            'assert.active' => 1,
+            'default_mimetype' => 1,
         ];
 
         $middleware = new PhpConfigMiddleware();
@@ -134,7 +132,7 @@ final class PhpConfigMiddlewareTest extends AbstractCase
 
         Dispatcher::run([$middleware]);
 
-        self::assertSame('1', ini_get('assert.active'));
+        self::assertSame('1', ini_get('default_mimetype'));
     }
 
     /**
@@ -143,7 +141,7 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     public function testNullIsNormalizedToEmptyString(): void
     {
         $config = [
-            'assert.callback' => null,
+            'user_agent' => null,
         ];
 
         $middleware = new PhpConfigMiddleware();
@@ -151,7 +149,7 @@ final class PhpConfigMiddlewareTest extends AbstractCase
 
         Dispatcher::run([$middleware]);
 
-        self::assertSame('', ini_get('assert.callback'));
+        self::assertSame('', ini_get('user_agent'));
     }
 
     /**
@@ -279,8 +277,8 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     public function testMultipleConfigOptionsCanBeSet(): void
     {
         $config = [
-            'assert.active' => 1,
-            'assert.warning' => true,
+            'default_mimetype' => 1,
+            'error_prepend_string' => true,
             'date.timezone' => 'UTC',
         ];
 
@@ -289,8 +287,8 @@ final class PhpConfigMiddlewareTest extends AbstractCase
 
         Dispatcher::run([$middleware]);
 
-        self::assertSame('1', ini_get('assert.active'));
-        self::assertSame('On', ini_get('assert.warning'));
+        self::assertSame('1', ini_get('default_mimetype'));
+        self::assertSame('On', ini_get('error_prepend_string'));
         self::assertSame('UTC', ini_get('date.timezone'));
     }
 
@@ -315,7 +313,7 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     public function testIntegerZeroIsNormalizedToString(): void
     {
         $config = [
-            'assert.active' => 0,
+            'default_mimetype' => 0,
         ];
 
         $middleware = new PhpConfigMiddleware();
@@ -323,16 +321,16 @@ final class PhpConfigMiddlewareTest extends AbstractCase
 
         Dispatcher::run([$middleware]);
 
-        self::assertSame('0', ini_get('assert.active'));
+        self::assertSame('0', ini_get('default_mimetype'));
     }
 
     private function getInstance(): PhpConfigMiddleware
     {
         $config    = [
             PhpConfigMiddleware::class => [
-                'assert.warning'  => true,
-                'assert.active'   => 1,
-                'assert.callback' => null,
+                'error_prepend_string'  => true,
+                'default_mimetype'   => 1,
+                'user_agent' => null,
             ],
         ];
         $container = new ServiceManager();

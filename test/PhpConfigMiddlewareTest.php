@@ -15,9 +15,9 @@ use Psr\Http\Server\MiddlewareInterface;
 final class PhpConfigMiddlewareTest extends AbstractCase
 {
     /**
-     * Test that middleware applies PHP configuration
+     * Test that process applies every configured php.ini option when the middleware is dispatched.
      */
-    public function testPhpConfigMiddleware(): void
+    public function testProcessAppliesConfiguredIniOptions(): void
     {
         $stack = [$this->getInstance()];
 
@@ -29,9 +29,11 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     }
 
     /**
-     * Test that invalid configuration option throws exception
+     * Test that process throws an UnexpectedValueException when a php.ini option cannot be set.
+     *
+     * @throws UnexpectedValueException When the configuration option is invalid.
      */
-    public function testPhpConfigMiddlewareException(): void
+    public function testProcessThrowsExceptionWhenIniOptionCannotBeSet(): void
     {
         self::expectException(UnexpectedValueException::class);
         self::expectExceptionMessage('Cannot set the value of a php.ini configuration option');
@@ -47,7 +49,7 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     }
 
     /**
-     * Test that middleware implements MiddlewareInterface
+     * Test that the middleware implements MiddlewareInterface when instantiated through the factory.
      */
     public function testMiddlewareImplementsMiddlewareInterface(): void
     {
@@ -58,9 +60,9 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     }
 
     /**
-     * Test that getConfig returns config set by setConfig
+     * Test that getConfig returns the exact configuration previously passed to setConfig.
      */
-    public function testGetConfigReturnsSetConfig(): void
+    public function testGetConfigReturnsConfigProvidedToSetConfig(): void
     {
         $config = [
             'default_mimetype' => 1,
@@ -73,9 +75,9 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     }
 
     /**
-     * Test that setConfig returns self for fluent interface
+     * Test that setConfig returns the same middleware instance to support a fluent interface.
      */
-    public function testSetConfigReturnsMiddlewareForFluentInterface(): void
+    public function testSetConfigReturnsSameMiddlewareInstance(): void
     {
         $middleware = new PhpConfigMiddleware();
 
@@ -85,9 +87,9 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     }
 
     /**
-     * Test that boolean true is normalized to 'On'
+     * Test that a boolean true configuration value is normalized to the ini string 'On'.
      */
-    public function testBooleanTrueIsNormalizedToOn(): void
+    public function testProcessNormalizesBooleanTrueToOn(): void
     {
         $config = [
             'error_prepend_string' => true,
@@ -102,9 +104,9 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     }
 
     /**
-     * Test that boolean false is normalized to 'Off'
+     * Test that a boolean false configuration value is normalized to the ini string 'Off'.
      */
-    public function testBooleanFalseIsNormalizedToOff(): void
+    public function testProcessNormalizesBooleanFalseToOff(): void
     {
         $config = [
             'error_prepend_string' => false,
@@ -119,9 +121,9 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     }
 
     /**
-     * Test that integer is normalized to string
+     * Test that a positive integer configuration value is normalized to its string representation.
      */
-    public function testIntegerIsNormalizedToString(): void
+    public function testProcessNormalizesPositiveIntegerToString(): void
     {
         $config = [
             'default_mimetype' => 1,
@@ -136,9 +138,26 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     }
 
     /**
-     * Test that null is normalized to empty string
+     * Test that the integer zero is normalized to the string '0' rather than an empty string.
      */
-    public function testNullIsNormalizedToEmptyString(): void
+    public function testProcessNormalizesIntegerZeroToString(): void
+    {
+        $config = [
+            'default_mimetype' => 0,
+        ];
+
+        $middleware = new PhpConfigMiddleware();
+        $middleware->setConfig($config);
+
+        Dispatcher::run([$middleware]);
+
+        self::assertSame('0', ini_get('default_mimetype'));
+    }
+
+    /**
+     * Test that a null configuration value is normalized to an empty string.
+     */
+    public function testProcessNormalizesNullToEmptyString(): void
     {
         $config = [
             'user_agent' => null,
@@ -153,9 +172,9 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     }
 
     /**
-     * Test that string value is passed through unchanged
+     * Test that a string configuration value is applied unchanged to the php.ini option.
      */
-    public function testStringValueIsPassedThrough(): void
+    public function testProcessPassesStringValueThroughUnchanged(): void
     {
         $config = [
             'date.timezone' => 'UTC',
@@ -170,9 +189,9 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     }
 
     /**
-     * Test that empty config array does not cause issues
+     * Test that an empty configuration array yields a successful 200 response without altering ini.
      */
-    public function testEmptyConfigArray(): void
+    public function testProcessWithEmptyConfigReturnsSuccessfulResponse(): void
     {
         $config = [];
 
@@ -185,9 +204,9 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     }
 
     /**
-     * Test that middleware passes request to handler
+     * Test that the middleware delegates to the next request handler in the stack.
      */
-    public function testMiddlewarePassesRequestToHandler(): void
+    public function testProcessDelegatesRequestToNextHandler(): void
     {
         $handlerCalled = false;
         $stack         = [
@@ -211,9 +230,9 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     }
 
     /**
-     * Test that handler response is preserved
+     * Test that the response produced by the next handler is returned unmodified by the middleware.
      */
-    public function testHandlerResponseIsPreserved(): void
+    public function testProcessPreservesResponseFromNextHandler(): void
     {
         $stack = [
             $this->getInstance(),
@@ -237,7 +256,7 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     }
 
     /**
-     * Test various HTTP methods
+     * Provides representative HTTP methods exercised by the middleware.
      *
      * @return array<string, array{method: string}>
      */
@@ -260,10 +279,10 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     }
 
     /**
-     * Test that middleware works with various HTTP methods
+     * Test that the middleware returns a 200 response regardless of the request HTTP method.
      */
     #[DataProvider('httpMethodProvider')]
-    public function testMiddlewareWorksWithVariousHttpMethods(string $method): void
+    public function testProcessReturnsSuccessForAnyHttpMethod(string $method): void
     {
         $request  = Factory::createServerRequest($method, '/');
         $response = Dispatcher::run([$this->getInstance()], $request);
@@ -272,14 +291,14 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     }
 
     /**
-     * Test that multiple config options can be set
+     * Test that multiple php.ini options are applied together when configured in a single array.
      */
-    public function testMultipleConfigOptionsCanBeSet(): void
+    public function testProcessAppliesMultipleConfigOptions(): void
     {
         $config = [
-            'default_mimetype' => 1,
+            'default_mimetype'     => 1,
             'error_prepend_string' => true,
-            'date.timezone' => 'UTC',
+            'date.timezone'        => 'UTC',
         ];
 
         $middleware = new PhpConfigMiddleware();
@@ -293,9 +312,9 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     }
 
     /**
-     * Test that factory creates middleware instance
+     * Test that the factory produces a PhpConfigMiddleware instance from the container configuration.
      */
-    public function testFactoryCreatesMiddlewareInstance(): void
+    public function testFactoryCreatesPhpConfigMiddlewareInstance(): void
     {
         $config    = [
             PhpConfigMiddleware::class => [],
@@ -310,27 +329,13 @@ final class PhpConfigMiddlewareTest extends AbstractCase
         self::assertInstanceOf(PhpConfigMiddleware::class, $middleware);
     }
 
-    public function testIntegerZeroIsNormalizedToString(): void
-    {
-        $config = [
-            'default_mimetype' => 0,
-        ];
-
-        $middleware = new PhpConfigMiddleware();
-        $middleware->setConfig($config);
-
-        Dispatcher::run([$middleware]);
-
-        self::assertSame('0', ini_get('default_mimetype'));
-    }
-
     private function getInstance(): PhpConfigMiddleware
     {
         $config    = [
             PhpConfigMiddleware::class => [
-                'error_prepend_string'  => true,
-                'default_mimetype'   => 1,
-                'user_agent' => null,
+                'error_prepend_string' => true,
+                'default_mimetype'     => 1,
+                'user_agent'           => null,
             ],
         ];
         $container = new ServiceManager();

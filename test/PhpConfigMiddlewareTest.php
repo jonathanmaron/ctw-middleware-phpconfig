@@ -30,8 +30,6 @@ final class PhpConfigMiddlewareTest extends AbstractCase
 
     /**
      * Test that process throws an UnexpectedValueException when a php.ini option cannot be set.
-     *
-     * @throws UnexpectedValueException When the configuration option is invalid.
      */
     public function testProcessThrowsExceptionWhenIniOptionCannotBeSet(): void
     {

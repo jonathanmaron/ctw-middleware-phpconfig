@@ -153,6 +153,23 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     }
 
     /**
+     * Test that a negative integer configuration value is normalized to its signed string representation.
+     */
+    public function testProcessNormalizesNegativeIntegerToString(): void
+    {
+        $config = [
+            'default_mimetype' => -1,
+        ];
+
+        $middleware = new PhpConfigMiddleware();
+        $middleware->setConfig($config);
+
+        Dispatcher::run([$middleware]);
+
+        self::assertSame('-1', ini_get('default_mimetype'));
+    }
+
+    /**
      * Test that a null configuration value is normalized to an empty string.
      */
     public function testProcessNormalizesNullToEmptyString(): void
@@ -319,6 +336,43 @@ final class PhpConfigMiddlewareTest extends AbstractCase
         ];
         $container = new ServiceManager();
         $container->setService('config', $config);
+
+        $factory    = new PhpConfigMiddlewareFactory();
+        $middleware = $factory($container);
+
+        // @phpstan-ignore-next-line
+        self::assertInstanceOf(PhpConfigMiddleware::class, $middleware);
+    }
+
+    /**
+     * Test that the factory applies the container's non-empty middleware config to the produced instance.
+     */
+    public function testFactoryAppliesContainerConfigToMiddleware(): void
+    {
+        $middlewareConfig = [
+            'default_mimetype' => 1,
+            'user_agent'       => null,
+        ];
+        $config           = [
+            PhpConfigMiddleware::class => $middlewareConfig,
+        ];
+        $container        = new ServiceManager();
+        $container->setService('config', $config);
+
+        $factory    = new PhpConfigMiddlewareFactory();
+        $middleware = $factory($container);
+
+        self::assertSame($middlewareConfig, $middleware->getConfig());
+    }
+
+    /**
+     * Test that the factory returns a middleware instance when the container has no config service.
+     */
+    public function testFactoryCreatesMiddlewareWhenContainerHasNoConfigService(): void
+    {
+        $container = new ServiceManager();
+
+        self::assertFalse($container->has('config'));
 
         $factory    = new PhpConfigMiddlewareFactory();
         $middleware = $factory($container);

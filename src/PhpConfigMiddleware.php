@@ -10,6 +10,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 class PhpConfigMiddleware extends AbstractPhpConfigMiddleware
 {
+    #[\Override]
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $config = $this->getConfig();

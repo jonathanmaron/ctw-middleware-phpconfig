@@ -34,7 +34,7 @@ final class PhpConfigMiddlewareTest extends AbstractCase
     public function testProcessThrowsExceptionWhenIniOptionCannotBeSet(): void
     {
         self::expectException(UnexpectedValueException::class);
-        self::expectExceptionMessage('Cannot set the value of a php.ini configuration option');
+        self::expectExceptionMessageIsOrContains('Cannot set the value of a php.ini configuration option');
 
         $config = [
             'invalid.invalid' => 'invalid',
